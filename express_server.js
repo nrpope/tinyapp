@@ -27,6 +27,19 @@ const generateRandomString = function() {
   return result;
 };
 
+const users = {
+  userRandomID: {
+    id: 'userRandomID',
+    email: 'user@example.com',
+    password: 'purple-monkey-dinosaur'
+  },
+  user2RandomID: {
+    id: 'user2RandomID',
+    email: 'user2@example.com',
+    password: 'dishwasher-funk'
+  }
+};
+
 //GET REQUESTS--------------------------------->
 
 //create new short url by entering in domain name
@@ -54,6 +67,11 @@ app.get('/urls/:shortURL', (req, res) => {
     username: req.cookies['username']
   };
   res.render('urls_show', templateVars);
+});
+
+//go to register page
+app.get('/register', (req, res) => {
+  res.render('register');
 });
 
 app.get('/u/:shortURL', (req, res) => {
@@ -98,12 +116,21 @@ app.post('/urls/:id', (req, res) => {
   urlDatabase[req.params.id].longURL = req.body.longURL;
   res.redirect('/urls');
 });
-
+//clears the username cookies
 app.post('/logout', (req, res) => {
   res.clearCookie('username');
   res.redirect('/urls');
 });
-
+app.post('/register', (req, res) => {
+  let randomString = generateRandomString();
+  users[randomString] = {
+    id: randomString,
+    email: req.body.email,
+    password: req.body.password
+  };
+  res.cookie('user_id', randomString);
+  res.redirect('/urls');
+});
 //Server run code------------------------------->
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
