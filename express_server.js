@@ -3,6 +3,7 @@ const app = express();
 const PORT = 8080; // default port 8080
 const bodyParser = require('body-parser');
 const cookieParser = require('cookie-parser');
+//const bcyrpt = require('bcrypt');
 
 app.use(cookieParser());
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -16,6 +17,16 @@ const urlDatabase = {
   b2xVn2: 'http://www.lighthouselabs.ca',
   '9sm5xK': 'http://www.google.com'
 };
+
+function checkExistingEmail(email) {
+  console.log('email is a string', email);
+  for (let userID in users) {
+    let currentemail = users[userID].email;
+    console.log('current email', currentemail);
+    if (currentemail === email) return true;
+  }
+  return false;
+}
 
 const generateRandomString = function() {
   let result = '';
@@ -123,14 +134,34 @@ app.post('/logout', (req, res) => {
 });
 app.post('/register', (req, res) => {
   let randomString = generateRandomString();
-  users[randomString] = {
-    id: randomString,
-    email: req.body.email,
-    password: req.body.password
-  };
-  res.cookie('user_id', randomString);
-  res.redirect('/urls');
+  let email = req.body.email;
+  if (!email || !req.body.password) {
+    res.status(400).send('Please enter both an email and password to register');
+    res.redirect('/register');
+  } else if (checkExistingEmail(email)) {
+    res.status(400).send('This email is already in use');
+  } else {
+    users[randomString] = {
+      id: randomString,
+      email,
+      password: req.body.password
+    };
+    res.cookie('user_id', randomString);
+    res.redirect('/urls');
+  }
 });
+/*
+app.post('/login', (req, res) => {
+  let user = user[req.body.username];
+  if (user && user.password === req.body.password) {
+    res.cookie('user', user.username);
+    res.redirect('/me');
+  } else {
+    res.redirect('/login');
+  }
+});
+*/
+
 //Server run code------------------------------->
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
