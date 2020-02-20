@@ -9,7 +9,7 @@ app.use(cookieParser());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.set('view engine', 'ejs');
 app.use(function(req, res, next) {
-  res.locals.username = req.cookies['username'] || false;
+  res.locals.user_id = req.cookies['user_id'] || false;
   next();
 });
 
@@ -19,11 +19,8 @@ const urlDatabase = {
 };
 
 function checkExistingEmail(email) {
-  console.log('email is a string', email);
   for (let userID in users) {
-    let currentemail = users[userID].email;
-    console.log('current email', currentemail);
-    if (currentemail === email) return true;
+    if (users[userID].email === email) return users[userID];
   }
   return false;
 }
@@ -57,7 +54,7 @@ const users = {
 app.get('/urls/new', (req, res) => {
   let templateVars = {
     longURL: urlDatabase[req.params.shortURL],
-    username: req.cookies['username']
+    user_id: req.cookies['user_id']
   };
   res.render('urls_new', templateVars);
 });
@@ -75,9 +72,13 @@ app.get('/urls/:shortURL', (req, res) => {
   let templateVars = {
     shortURL: req.params.shortURL,
     longURL: urlDatabase[req.params.shortURL],
-    username: req.cookies['username']
+    user_id: req.cookies['user_id']
   };
   res.render('urls_show', templateVars);
+});
+//login page GET
+app.get('/login', (req, res) => {
+  res.render('login');
 });
 
 //go to register page
@@ -105,10 +106,38 @@ app.get('/hello', (req, res) => {
 
 //accepts login cookie
 app.post('/login', (req, res) => {
-  res.cookie('username', req.body.username);
-  res.redirect('/urls');
+  let foundUser = checkExistingEmail(req.body.email);
+  if (foundUser) {
+    res.cookie('user_id', foundUser.id);
+    if (foundUser.password === req.body.password) {
+      res.cookie('user_id', foundUser.id);
+      res.redirect('/urls');
+    } else {
+      res.status(403).send("Passwords don't match");
+    }
+  } else {
+    res
+      .status(403)
+      .send(
+        'That password does not exist. Please try again or register as new user'
+      );
+    res.redirect('/urls');
+  }
 });
-
+/*      
+app.post('/login', (req, res) => {
+  let user = users[req.body.email];
+  if (checkExistingEmail(users)) {
+    res.status(403).send('This email cannot be found');
+    res.redirect('/login');
+  } else if (req.body.password !== users.password) {
+    res.status(403).send('The password you entered does not match');
+  } else {
+    res.cookie('user_id', req.body.email);
+    res.redirect('/urls');
+  }
+});
+*/
 //creates a new shortURL with a randomly generated string
 app.post('/urls', (req, res) => {
   let shortURL = generateRandomString();
@@ -127,9 +156,9 @@ app.post('/urls/:id', (req, res) => {
   urlDatabase[req.params.id].longURL = req.body.longURL;
   res.redirect('/urls');
 });
-//clears the username cookies
+//clears the user_id cookies
 app.post('/logout', (req, res) => {
-  res.clearCookie('username');
+  res.clearCookie('user_id');
   res.redirect('/urls');
 });
 app.post('/register', (req, res) => {
@@ -140,27 +169,17 @@ app.post('/register', (req, res) => {
     res.redirect('/register');
   } else if (checkExistingEmail(email)) {
     res.status(400).send('This email is already in use');
+    res.redirect('/register');
   } else {
     users[randomString] = {
-      id: randomString,
+      id: req.body.id,
       email,
       password: req.body.password
     };
-    res.cookie('user_id', randomString);
+    res.cookie('user_id', email);
     res.redirect('/urls');
   }
 });
-/*
-app.post('/login', (req, res) => {
-  let user = user[req.body.username];
-  if (user && user.password === req.body.password) {
-    res.cookie('user', user.username);
-    res.redirect('/me');
-  } else {
-    res.redirect('/login');
-  }
-});
-*/
 
 //Server run code------------------------------->
 app.listen(PORT, () => {
