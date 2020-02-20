@@ -21,6 +21,7 @@
       <%- include ('partials/_header.ejs')%>
     </header>
     <main style="margin: 1em;">
+      <% if (user_id) { %>
       <h3>My URLs</h3>
       <table class="table">
         <thead>
@@ -32,14 +33,14 @@
           </tr>
         </thead>
         <tbody>
-          <% for(let url in urls) { %>
+          <% for(let shortURL in urls) { %>
           <tr>
-            <td><%= url %></td>
-            <td><%= urls[url].longURL %></td>
+            <td><%= shortURL %></td>
+            <td><%= urls[shortURL]['longURL'] %></td>
             <td>
               <form
                 method="GET"
-                action="/urls/<%= url %>/edit"
+                action="/urls/<%= shortURL %>/edit"
                 class="btn btn-primary"
               >
                 <button type="submit">Edit</button>
@@ -49,7 +50,7 @@
             <td>
               <form
                 method="POST"
-                action="/urls/<%= url %>/delete"
+                action="/urls/<%= shortURL %>/delete"
                 class="btn btn-primary"
               >
                 <button type="submit">Delete</button>
@@ -58,6 +59,7 @@
           </tr>
           <% } %>
         </tbody>
+        <% } %>
       </table>
     </main>
     <!-- Bootstrap JS -->

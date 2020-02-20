@@ -13,14 +13,29 @@ app.use(function(req, res, next) {
   next();
 });
 
+//DATABASE --------------------------->
+const users = {
+  userRandomID: {
+    id: 'aJ48lW',
+    email: 'user@example.com',
+    password: 'test1'
+  },
+  user2RandomID: {
+    id: 'user2RandomID',
+    email: 'user2@example.com',
+    password: 'dishwasher-funk'
+  }
+};
 const urlDatabase = {
   b6UTxQ: { longURL: 'https://www.tsn.ca', userID: 'aJ48lW' },
   i3BoGr: { longURL: 'https://www.google.ca', userID: 'aJ48lW' }
 };
-
+//Function junction ------------------------->
 function checkExistingEmail(email) {
   for (let userID in users) {
-    if (users[userID].email === email) return users[userID];
+    if (users[userID].email === email) {
+      return true;
+    }
   }
   return false;
 }
@@ -38,23 +53,19 @@ const generateRandomString = function() {
 function urlsForUser(id) {
   const longURL = urlDatabase[req.params.id];
   let urlDatabase = '';
-  for (var userID in longURL) {
+  for (let userID in longURL) {
     if (longURL.userID === req.cookies.user_id);
   }
   return false;
 }
-
-const users = {
-  userRandomID: {
-    id: 'userRandomID',
-    email: 'user@example.com',
-    password: 'purple-monkey-dinosaur'
-  },
-  user2RandomID: {
-    id: 'user2RandomID',
-    email: 'user2@example.com',
-    password: 'dishwasher-funk'
+const isUsersLink = function(object, id) {
+  let usersObject = {};
+  for (let key in object) {
+    if (object[key].userID === id) {
+      usersObject[key] = object[key];
+    }
   }
+  return usersObject;
 };
 
 //GET REQUESTS--------------------------------->
@@ -77,7 +88,11 @@ app.get('/urls', (req, res) => {
 });
 
 app.get('/urls/:id', (req, res) => {
-  let templateVars = { urlObj: urlDatabase[req.params.id] };
+  let templateVars = {
+    urlObj: urlDatabase[req.params.id],
+    shortURL: req.params.id
+  };
+  console.log('templatevars', templateVars);
   res.render('urls_show', templateVars);
 });
 
@@ -88,9 +103,9 @@ app.get('/urls/:shortURL/edit', (req, res) => {
 //goes to edit page from shortURL address
 app.get('/urls/:shortURL', (req, res) => {
   let templateVars = {
-    shortURL: req.params.shortURL,
-    longURL: urlDatabase[req.params.shortURL],
-    user: req.cookies.user_id
+    user: req.cookies.user_id,
+    urlObj: urlDatabase[req.params.shortURL],
+    shortURL: req.params.shortURL
   };
   res.render('urls_show', templateVars);
 });
@@ -122,11 +137,29 @@ app.get('/hello', (req, res) => {
 
 //POST REQUESTS-------------------------------->
 
+//updates LongURL
+app.post('/urls/:id', (req, res) => {
+  res.redirect('/urls');
+});
+
+//updates longURL
+app.post('/urls/:shortURL/edit', (req, res) => {
+  const userID = req.cookies.user_id;
+  const shortURL = req.params.shortURL;
+  let usersObj = isUsersLink(urlDatabase, userID);
+  //check if shortURL exists for current user:
+  if (usersObj[shortURL]) {
+    urlDatabase[shortURL].longURL = req.body.longURL;
+    res.redirect('/urls');
+  } else {
+    res.status(403).send('You do not have access to edit this link');
+  }
+});
+
 //accepts login cookie
 app.post('/login', (req, res) => {
   let foundUser = checkExistingEmail(req.body.email);
   if (foundUser) {
-    res.cookie('user_id', foundUser.id);
     if (foundUser.password === req.body.password) {
       res.cookie('user_id', foundUser.id);
       res.redirect('/urls');
@@ -144,12 +177,10 @@ app.post('/login', (req, res) => {
 });
 
 //creates a new shortURL with a randomly generated
-
 app.post('/urls', (req, res) => {
   let shortURL = generateRandomString();
   let longURL = req.body.longURL;
-  urlDatabase[id] = {
-    shortURL: shortURL,
+  urlDatabase[shortURL] = {
     longURL: longURL,
     userID: req.cookies.user_id
   };
@@ -158,6 +189,7 @@ app.post('/urls', (req, res) => {
 //deletes the URL from the database
 app.post('/urls/:id/delete', (req, res) => {
   const UrlObj = urlDatabase[req.params.id];
+  console.log(req.cookies);
   if (UrlObj.userID === req.cookies.user_id) {
     console.log('Before', urlDatabase);
     delete urlDatabase[req.params.id];
@@ -172,6 +204,7 @@ app.post('/logout', (req, res) => {
   res.clearCookie('user_id');
   res.redirect('/urls');
 });
+
 app.post('/register', (req, res) => {
   let randomString = generateRandomString();
   let email = req.body.email;
