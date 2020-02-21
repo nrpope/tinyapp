@@ -23,7 +23,11 @@
       <span>Logged in as: <%= user.email %></span>
       <button>Logout</button>
     </form>
-    <% } else { %><a href="/register">Register</a> /
-    <a href="/login">Login</a><% } %>
+    <% } else { %>
+      <form action="/login" method="GET" type="submit" value="login">
+        <button>Login</button>
+        <form action="/register" method="GET" type="submit" value="register">
+          <button>Register</button>
+  <% } %>
   </nav>
 </header>
