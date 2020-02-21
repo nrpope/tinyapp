@@ -78,7 +78,6 @@ app.get('/urls/:id', (req, res) => {
     longURL: urlDatabase[req.params.id]['longURL'],
     user: getUser(req)
   };
-  console.log('templatevars', templateVars);
   res.render('urls_show', templateVars);
 });
 
@@ -161,15 +160,6 @@ app.post('/login', (req, res) => {
   let loginPassword = req.body.password;
   let userID = getUserByEmail(loginEmail, users);
   let passwordCheck = checkPassword(loginEmail, loginPassword, users[userID]);
-  console.log(
-    'passwordcheck',
-    checkPassword,
-    passwordCheck,
-    loginEmail,
-    loginPassword,
-    userID,
-    users[userID]
-  );
   if (userID && passwordCheck) {
     req.session.user_id = userID;
     res.redirect('/urls');
@@ -207,7 +197,7 @@ app.post('/logout', (req, res) => {
   req.session = null;
   res.redirect('/login');
 });
-
+//create new user
 app.post('/register', function(req, res) {
   const { email, password } = req.body;
   //if email or password input is blank send an error
