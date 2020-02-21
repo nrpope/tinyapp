@@ -75,6 +75,7 @@ app.get('/urls/:id', (req, res) => {
   let templateVars = {
     urlObj: urlDatabase[req.params.id],
     shortURL: req.params.id,
+    longURL: urlDatabase[req.params.id]['longURL'],
     user: getUser(req)
   };
   console.log('templatevars', templateVars);
@@ -209,19 +210,16 @@ app.post('/logout', (req, res) => {
 
 app.post('/register', function(req, res) {
   const { email, password } = req.body;
-  //if email or password input is blank throw an error
-  if (email === '' || password === '') {
-    console.log('reg failed 1');
+  //if email or password input is blank send an error
+  if (!email || !password) {
     res.status(400).send('An email or password needs to be entered.');
     return;
-    //if email is already in use throw an error
+    //if email is already in use send an error
   } else if (getUserByEmail(email, users)) {
-    console.log('reg failed2');
     res.status(400).send('Email is already in use.');
     return;
   } else {
-    console.log('registration condition pass', email, password);
-    //if the email is not in use, create a new user for TinyApp
+    //if the email is not in use, create a new user
     const userID = generateRandomString();
     users[userID] = {
       id: userID,
