@@ -3,7 +3,7 @@ const app = express();
 const PORT = 8080; // default port 8080
 const bodyParser = require('body-parser');
 const cookieParser = require('cookie-parser');
-//const bcyrpt = require('bcrypt');
+const bcrypt = require('bcrypt');
 
 app.use(cookieParser());
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -49,15 +49,6 @@ const generateRandomString = function() {
   }
   return result;
 };
-
-function urlsForUser(id) {
-  const longURL = urlDatabase[req.params.id];
-  let urlDatabase = '';
-  for (let userID in longURL) {
-    if (longURL.userID === req.cookies.user_id);
-  }
-  return false;
-}
 const isUsersLink = function(object, id) {
   let usersObject = {};
   for (let key in object) {
@@ -66,6 +57,27 @@ const isUsersLink = function(object, id) {
     }
   }
   return usersObject;
+};
+
+const getUserByEmail = function(email, database) {
+  for (let user in database) {
+    if (database[user].email === email) {
+      return database[user].id;
+    }
+  }
+};
+
+//Password Validation using bcrypt
+const checkPassword = function(loginEmail, loginPassword, objectDb) {
+  for (let user in objectDb) {
+    if (
+      objectDb[user].email === loginEmail &&
+      bcrypt.compareSync(loginPassword, objectDb[user].password)
+    ) {
+      return true;
+    }
+  }
+  return false;
 };
 
 //GET REQUESTS--------------------------------->
@@ -175,6 +187,19 @@ app.post('/login', (req, res) => {
     res.redirect('/urls');
   }
 });
+app.post('/login', function(req, res) {
+  let loginEmail = req.body.loginemail;
+  let loginPassword = req.body.loginPassword;
+  let userID = getUserByEmail(loginEmail, users);
+  let passwordCheck = checkPassword(loginEmail, loginPassword, users);
+  console.log('passwordcheck', passwordCheck);
+  if (userID && passwordCheck) {
+    req.session.user_id = userID;
+    res.redirect('/urls');
+  } else {
+    res.send('Invalid email or password combination.');
+  }
+});
 
 //creates a new shortURL with a randomly generated
 app.post('/urls', (req, res) => {
@@ -207,20 +232,21 @@ app.post('/logout', (req, res) => {
 
 app.post('/register', (req, res) => {
   let randomString = generateRandomString();
-  let email = req.body.email;
-  if (!email || !req.body.password) {
+  let { email, password } = req.body;
+  if (!email || !password) {
     res.status(400).send('Please enter both an email and password to register');
     res.redirect('/register');
-  } else if (checkExistingEmail(email)) {
+  } else if (checkExistingEmail(email, users)) {
     res.status(400).send('This email is already in use');
     res.redirect('/register');
   } else {
-    users[randomString] = {
-      id: req.body.id,
-      email,
-      password: req.body.password
+    let userID = generateRandomString();
+    users[userID] = {
+      id: userID,
+      email: email,
+      password: bcrypt.hashSync(password, 10)
     };
-    res.cookie('user_id', email);
+    res.cookie('user_id', userID);
     res.redirect('/urls');
   }
 });
