@@ -34,11 +34,12 @@ const users = {
   }
 };
 const urlDatabase = {
-  b6UTxQ: { longURL: 'https://www.tsn.ca', userID: 'userRandomID' },
-  i3BoGr: { longURL: 'https://www.google.ca', userID: 'aJ48lW' }
+  b6UTxQ: { longURL: 'www.tsn.ca', userID: 'userRandomID' },
+  i3BoGr: { longURL: 'www.google.ca', userID: 'aJ48lW' }
 };
 
 //GET REQUESTS--------------------------------->
+//landing page. Will redirect based on cookie status
 app.get('/', (req, res) => {
   const user = getUser(req);
   if (user) {
@@ -71,6 +72,7 @@ app.get('/urls', (req, res) => {
   }
 });
 
+//shows urls by random string ID
 app.get('/urls/:id', (req, res) => {
   let templateVars = {
     urlObj: urlDatabase[req.params.id],
@@ -119,6 +121,7 @@ app.get('/register', (req, res) => {
   res.render('register', templateVars);
 });
 
+//goes from shortURL link to webpage
 app.get('/u/:shortURL', (req, res) => {
   const { shortURL } = req.params;
   const longURL = urlDatabase[shortURL].longURL;
@@ -200,16 +203,13 @@ app.post('/logout', (req, res) => {
 //create new user
 app.post('/register', function(req, res) {
   const { email, password } = req.body;
-  //if email or password input is blank send an error
   if (!email || !password) {
     res.status(400).send('An email or password needs to be entered.');
     return;
-    //if email is already in use send an error
   } else if (getUserByEmail(email, users)) {
     res.status(400).send('Email is already in use.');
     return;
   } else {
-    //if the email is not in use, create a new user
     const userID = generateRandomString();
     users[userID] = {
       id: userID,
